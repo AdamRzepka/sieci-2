@@ -7,6 +7,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.ButtonGroup;
 import javax.swing.JTextField;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
@@ -14,11 +15,20 @@ import javax.swing.JRadioButton;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.JLabel;
 
+import common.GameType;
+import common.Player;
+
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
 public class ConnectDialog extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
 	private JTextField serverNameText;
 	private JTextField loginText;
+	private JRadioButton pvpRadio;
+	private JRadioButton pvcRadio;
+	Main mainForm;
 
 	/**
 	 * Launch the application.
@@ -44,13 +54,20 @@ public class ConnectDialog extends JDialog {
 		
 		serverNameText = new JTextField();
 		serverNameText.setColumns(10);
+		serverNameText.setText("localhost");
 		
-		JRadioButton pvpRadio = new JRadioButton("Player vs Player");
+		ButtonGroup group = new ButtonGroup();
 		
-		JRadioButton pvcRadio = new JRadioButton("Player vs Computer");
+		pvpRadio = new JRadioButton("Player vs Player");
+		pvpRadio.setSelected(true);
+		pvcRadio = new JRadioButton("Player vs Computer");
+
+		group.add(pvpRadio);
+		group.add(pvcRadio);
 		
 		loginText = new JTextField();
 		loginText.setColumns(10);
+		loginText.setText("Player");
 		
 		JLabel lblPlayerName = new JLabel("Player name");
 		
@@ -102,12 +119,23 @@ public class ConnectDialog extends JDialog {
 			getContentPane().add(buttonPane, BorderLayout.SOUTH);
 			{
 				JButton okButton = new JButton("OK");
+				okButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent arg0) {
+						ConnectDialog.this.setVisible(false);
+						mainForm.connectToServer(serverNameText.getText(), loginText.getText(), pvcRadio.isSelected() ? GameType.PVC : GameType.PVP);
+					}
+				});
 				okButton.setActionCommand("OK");
 				buttonPane.add(okButton);
 				getRootPane().setDefaultButton(okButton);
 			}
 			{
 				JButton cancelButton = new JButton("Cancel");
+				cancelButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						ConnectDialog.this.setVisible(false);
+					}
+				});
 				cancelButton.setActionCommand("Cancel");
 				buttonPane.add(cancelButton);
 			}

@@ -40,6 +40,7 @@ public class AiClient implements IClient {
 					try {
 						server.move(player, i, j);
 						board[i][j] = myMark;
+						return;
 					} catch (InvalidState e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();

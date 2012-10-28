@@ -114,10 +114,10 @@ public class Main {
 		public void actionPerformed(ActionEvent e) {
 			if (fields[x][y].getText().isEmpty() && server != null && readyToMove) {
 				try {
-					server.move(player, x, y);
 					fields[x][y].setText(myMark);
 					readyToMove = false;
 					statusLabel.setText("Waiting for other player");
+					server.move(player, x, y);
 				} catch (RemoteException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();

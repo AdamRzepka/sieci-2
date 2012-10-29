@@ -52,7 +52,7 @@ public class AiClient implements IClient {
 	}
 
 	@Override
-	public void onGameEnd(EndType type) throws RemoteException {
+	public void onGameEnd(EndType type, int lastX, int lastY) throws RemoteException {
 		// TODO Auto-generated method stub
 
 	}

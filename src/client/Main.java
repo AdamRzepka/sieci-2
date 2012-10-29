@@ -4,6 +4,8 @@ import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import java.awt.GridLayout;
+
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
@@ -29,16 +31,18 @@ import javax.swing.JLabel;
 
 public class Main {
 
-	private JFrame frame;
+	JFrame frame;
 	private ConnectDialog dialog = new ConnectDialog();
-	private JButton[][] fields = new JButton[3][3];
+	JButton[][] fields = new JButton[3][3];
 	String myMark;
 	boolean readyToMove = false;
 	IServer server;
 	Client client;
 	Player player;
 	JLabel statusLabel;
-	
+	JLabel playerLabel;
+	JLabel opponentLabel;
+
 	public void opponentMove(int x, int y, String mark) {
 		if (!readyToMove && fields[x][y].getText().isEmpty()) {
 			fields[x][y].setText(mark);
@@ -46,36 +50,40 @@ public class Main {
 			statusLabel.setText("Your turn");
 		}
 	}
-	
+
 	public void connectToServer(String address, String playerName, GameType type) {
-//		if (System.getSecurityManager() == null) {
-//            System.setSecurityManager(new SecurityManager());
-//        }
-        try {
-        	readyToMove = false;
-        	for (JButton[] row: fields) {
-        		for (JButton field: row) {
-        			field.setText("");
-        		}
-        	}
-            String name = "Server";
-            Registry registry = LocateRegistry.getRegistry(address);
-            server = (IServer) registry.lookup(name);
-            System.out.println("Server located");
-            player = new Player(playerName);
-            client = new Client(this);
-            IClient stub = (IClient)UnicastRemoteObject.exportObject(client, 0);
-            if (server.join(stub, player, type)) {
-            	if (!readyToMove) {
-            		statusLabel.setText("Waiting for other player");
-            	}
-            } else {
-            	statusLabel.setText("Server full");
-            }
-        } catch (Exception e) {
-            System.err.println("ComputePi exception:");
-            e.printStackTrace();
-        }	
+		// if (System.getSecurityManager() == null) {
+		// System.setSecurityManager(new SecurityManager());
+		// }
+		try {
+			readyToMove = false;
+			for (JButton[] row : fields) {
+				for (JButton field : row) {
+					field.setText("");
+				}
+			}
+			String name = "Server";
+			Registry registry = LocateRegistry.getRegistry(address);
+			server = (IServer) registry.lookup(name);
+			System.out.println("Server located");
+			player = new Player(playerName);
+			client = new Client(this);
+			IClient stub = (IClient) UnicastRemoteObject
+					.exportObject(client, 0);
+			if (server.join(stub, player, type)) {
+				if (!readyToMove) {
+					statusLabel.setText("Waiting for other player");
+				}
+			} else {
+				statusLabel.setText("Server full or name already used");
+				server = null;
+				player = null;
+				client = null;
+			}
+		} catch (Exception e) {
+			System.err.println("ComputePi exception:");
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -101,6 +109,15 @@ public class Main {
 		initialize();
 	}
 
+	public void reset() {
+		server = null;
+		client = null;
+		player = null;
+		statusLabel.setText("Select Game->Join to join the game");
+		playerLabel.setText("");
+		opponentLabel.setText("");
+	}
+	
 	private class FieldListener implements ActionListener {
 
 		public FieldListener(int x, int y) {
@@ -109,10 +126,11 @@ public class Main {
 		}
 
 		private int x, y;
-		
+
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			if (fields[x][y].getText().isEmpty() && server != null && readyToMove) {
+			if (fields[x][y].getText().isEmpty() && server != null
+					&& readyToMove) {
 				try {
 					fields[x][y].setText(myMark);
 					readyToMove = false;
@@ -125,11 +143,11 @@ public class Main {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-			}		
+			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -151,7 +169,12 @@ public class Main {
 			
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				dialog.setVisible(true);
+				if (server == null) {
+					dialog.setVisible(true);
+				}
+				else {
+					JOptionPane.showMessageDialog(frame, "You are already connected to server");
+				}
 				
 			}
 		});
@@ -178,22 +201,35 @@ public class Main {
 		}
 		
 		statusLabel = new JLabel("Select Game->Join to join the game");
+		playerLabel = new JLabel("");
+		opponentLabel = new JLabel("");
 
 		GroupLayout groupLayout = new GroupLayout(frame.getContentPane());
 		groupLayout.setHorizontalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
-				.addGroup(groupLayout.createSequentialGroup()
-					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+				.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+					.addGroup(groupLayout.createSequentialGroup()
 						.addComponent(gamePanel, GroupLayout.PREFERRED_SIZE, 183, GroupLayout.PREFERRED_SIZE)
-						.addGroup(groupLayout.createSequentialGroup()
+						.addGap(40)
+						.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+							.addComponent(playerLabel)
+							.addComponent(opponentLabel))
+					.addContainerGap())
+					.addGroup(groupLayout.createSequentialGroup()
 							.addGap(12)
 							.addComponent(statusLabel, GroupLayout.DEFAULT_SIZE, 426, Short.MAX_VALUE)))
-					.addContainerGap())
+
 		);
 		groupLayout.setVerticalGroup(
 			groupLayout.createParallelGroup(Alignment.LEADING)
 				.addGroup(groupLayout.createSequentialGroup()
-					.addComponent(gamePanel, GroupLayout.PREFERRED_SIZE, 163, GroupLayout.PREFERRED_SIZE)
+					.addGroup(groupLayout.createParallelGroup(Alignment.LEADING)
+						.addComponent(gamePanel, GroupLayout.PREFERRED_SIZE, 163, GroupLayout.PREFERRED_SIZE)
+						.addGroup(groupLayout.createSequentialGroup()
+							.addGap(40)
+							.addComponent(playerLabel)
+							.addGap(12)
+							.addComponent(opponentLabel)))
 					.addGap(18)
 					.addComponent(statusLabel)
 					.addContainerGap(83, Short.MAX_VALUE))

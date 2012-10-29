@@ -6,5 +6,5 @@ import java.rmi.RemoteException;
 public interface IClient extends Remote {
 	void onGameStart(Player opponent, Mark myMark, boolean myTurn) throws RemoteException;
 	void onOpponentMove(int x, int y) throws RemoteException;
-	void onGameEnd(EndType type) throws RemoteException;
+	void onGameEnd(EndType type, int lastX, int lastY) throws RemoteException;
 }

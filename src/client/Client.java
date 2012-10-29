@@ -1,6 +1,9 @@
 package client;
 
+import java.awt.EventQueue;
 import java.rmi.RemoteException;
+
+import javax.swing.JOptionPane;
 
 import common.EndType;
 import common.IClient;
@@ -23,6 +26,10 @@ public class Client implements IClient {
 		mainForm.myMark = (myMark == Mark.O ? "o" : "x");
 		mainForm.readyToMove = myTurn;
 		mainForm.statusLabel.setText((myTurn ? "Your turn" : "Waiting for other player"));
+		String markText = (myMark == Mark.O ? "o" : "x");
+		String markTextOp = (myMark == Mark.X ? "o" : "x");
+		mainForm.playerLabel.setText(markText + ": " + mainForm.player.getPlayerName());
+		mainForm.opponentLabel.setText(markTextOp + ": " + opponent.getPlayerName());
 	}
 
 	@Override
@@ -31,8 +38,37 @@ public class Client implements IClient {
 	}
 
 	@Override
-	public void onGameEnd(EndType type) throws RemoteException {
-		// TODO Auto-generated method stub
+	public void onGameEnd(EndType type, int lastX, int lastY) throws RemoteException {
+		if (mainForm.fields[lastX][lastY].getText().isEmpty()) {
+			mainForm.fields[lastX][lastY].setText((myMark == Mark.X ? "o" : "x"));
+		}
+		String msg = "";
+		switch (type) {
+		case DISCONNECTED:
+			msg = "Other player disconnected";
+			break;
+		case LOOSE:
+			msg = "You loose!";
+			break;
+		case WIN:
+			msg = "You win!";
+			break;
+		case TIE:
+			msg = "Tie!";
+			break;
+		default:
+			break;
+		}
+
+		final String message = msg;
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				JOptionPane.showMessageDialog(mainForm.frame, message);
+				mainForm.reset();				
+			}
+		});
+
+
 
 	}
 

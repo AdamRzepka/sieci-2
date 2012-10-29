@@ -5,5 +5,6 @@ import java.io.Serializable;
 public enum EndType implements Serializable {
 	WIN,
 	LOOSE,
+	TIE,
 	DISCONNECTED
 }

@@ -4,7 +4,9 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Arrays;
 
+import common.EndType;
 import common.GameType;
 import common.IClient;
 import common.IServer;
@@ -28,6 +30,7 @@ public class Server implements IServer {
 
 	private PlayerRecord[] players = new PlayerRecord[2];
 	private int activePlayer = -1;
+	private int[][] board = new int[3][3];
 
 	@Override
 	public boolean join(IClient client, Player player, GameType type)
@@ -44,13 +47,13 @@ public class Server implements IServer {
 				startGame();
 			}
 			return true;
-		} else if (players[1] == null) {
+		} else if (players[1] == null && type != GameType.PVC && !players[0].player.getPlayerName().equals(player.getPlayerName())) {
 			players[1] = new PlayerRecord(player, client, Mark.X);
 			System.out.println("PVP match starts");
 			startGame();
 			return true;
 		} else {
-			System.out.println("Server alrady full");
+			System.out.println("Server full or name already used");
 			return false;
 		}
 	}
@@ -60,15 +63,100 @@ public class Server implements IServer {
 		if (activePlayer != -1
 				&& player.getPlayerName().equals(
 						players[activePlayer].player.getPlayerName())) {
-			activePlayer = (activePlayer + 1) % 2;
-			players[activePlayer].client.onOpponentMove(x, y);
+			board[x][y] = activePlayer;
+			int winner = checkEndGame();
+			if (winner != -1) {
+				if (winner == 2) {
+					System.out.println("Game ends with tie.");
+					players[0].client.onGameEnd(EndType.TIE, x, y);
+					players[1].client.onGameEnd(EndType.TIE, x, y);
+					reset();
+				} else {
+					System.out.printf("Player %d wins\n", winner);
+					players[winner].client.onGameEnd(EndType.WIN, x, y);
+					players[1 - winner].client.onGameEnd(EndType.LOOSE, x, y);
+					reset();
+				}
+			}
+			else {
+				activePlayer = (activePlayer + 1) % 2;
+				try {
+					players[activePlayer].client.onOpponentMove(x, y);
+				} catch (RemoteException re) {
+					activePlayer = (activePlayer + 1) % 2;
+					players[activePlayer].client.onGameEnd(EndType.DISCONNECTED, x, y);
+					reset();
+				}
+			}
 		} else {
 			throw new InvalidState();
 		}
 	}
+	
+	private void reset(){
+		players[0] = null;
+		players[1] = null;
+		activePlayer = -1;
+	}
+
+	private int checkEndGame() {
+		int candidate = -1;
+		for (int i = 0; i < 3; ++i) {
+			//horizontally
+			candidate = board[i][0];
+			boolean win = true;
+			if (candidate != -1) {
+				for (int j = 0; j < 3; ++j) {
+					if (board[i][j] != candidate) {
+						win = false;
+						break;
+					}
+				}
+				if (win)
+					return candidate;
+			}
+			
+			win = true;
+			// vertically
+			candidate = board[0][i];
+			if (candidate != -1) {
+				for (int j = 0; j < 3; ++j) {
+					if (board[j][i] != candidate) {
+						win = false;
+						break;
+					}
+				}
+				if (win)
+					return candidate;
+			}			
+		}
+		
+		candidate = board[0][0];
+		if (candidate != -1 && candidate == board[1][1] && candidate == board[2][2])
+			return candidate;
+		
+		candidate = board[0][2];
+		if (candidate != -1 && candidate == board[1][1] && candidate == board[2][0])
+			return candidate;
+		
+		for (int i = 0; i < 3; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				if (board[i][j] == -1) {
+					return -1;
+				}
+			}
+		}
+		
+		return 2; //tie
+	}
 
 	private void startGame() {
 		try {
+			for (int i = 0; i < 3; ++i) {
+				for (int j = 0; j < 3; ++j) {
+					board[i][j] = -1;
+				}
+			}
 			players[0].client.onGameStart(players[1].player, players[0].mark,
 					true);
 			players[1].client.onGameStart(players[0].player, players[1].mark,
